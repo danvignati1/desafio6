@@ -1,10 +1,7 @@
 [project]
-name = "desafio6"
+name = "aurora"
 version = "0.1.0"
-description = "Add your description here"
-authors = [
-    { name = "Danilo Vignati dos Reis", email = "danilo.reis+paytrack@paytrack.com.br" }
-]
+description = "Assistente virtual do Residencial Aurora (Google ADK)"
 requires-python = ">=3.12"
 dependencies = [
     "aiosqlite>=0.22.1",
@@ -16,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-desafio6 = "desafio6:main"
+aurora-restaurar = "aurora.restaurar:main"
 
 [build-system]
 requires = ["uv_build>=0.12.4,<0.13.0"]
