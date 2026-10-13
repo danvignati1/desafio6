@@ -83,7 +83,7 @@ Morador ──> API FastAPI ──> Runner (ADK) ──> Agente principal "auror
 - [x] **3. Agentes:** principal `aurora` com especialistas `reservas` e `visitantes`, App com retomada ligada (`scripts/verificar_agentes.py`).
 - [x] **4. API:** rotas do contrato em `src/aurora/api.py`, pendências derivadas dos eventos persistidos, `404` e `409`, rede de segurança contra retomada silenciosa (`scripts/verificar_api.py`).
 - [x] **5. Regulamento:** especialista `regulamento` com tool de busca por capítulo (`src/aurora/regulamento.py`), que devolve no máximo 3 artigos de um único capítulo (`scripts/verificar_regulamento.py`).
-- [ ] **6. Script de fluxo** reproduzindo os 15 passos do avaliador, incluindo reinício e disputa concorrente.
+- [x] **6. Script de fluxo** (`scripts/fluxo_avaliador.py`) reproduz os 15 passos do avaliador por HTTP, sobe e reinicia a API sozinho; `scripts/verificar_api.py` roda o mesmo fluxo com modelo falso.
 - [ ] **7. README final** com Arquitetura, Garantias (arquivo e trecho) e Como rodar.
 
 ## Garantias

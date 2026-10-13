@@ -8,12 +8,9 @@ no banco, não nestas instruções.
 from google.adk.agents import LlmAgent
 from google.adk.apps import App
 from google.adk.apps.app import ResumabilityConfig
-from google.genai import types
 
 from aurora import config
 from aurora.tools import FERRAMENTAS_REGULAMENTO, FERRAMENTAS_RESERVAS, FERRAMENTAS_VISITANTES
-
-_GERACAO = types.GenerateContentConfig(temperature=0.2)
 
 _REGRAS_COMUNS = """
 Regras de conduta:
@@ -48,7 +45,6 @@ agente_reservas = LlmAgent(
         + _REGRAS_COMUNS
     ),
     tools=FERRAMENTAS_RESERVAS,
-    generate_content_config=_GERACAO,
 )
 
 agente_visitantes = LlmAgent(
@@ -64,7 +60,6 @@ agente_visitantes = LlmAgent(
         + _REGRAS_COMUNS
     ),
     tools=FERRAMENTAS_VISITANTES,
-    generate_content_config=_GERACAO,
 )
 
 agente_regulamento = LlmAgent(
@@ -83,7 +78,6 @@ agente_regulamento = LlmAgent(
         + _REGRAS_COMUNS
     ),
     tools=FERRAMENTAS_REGULAMENTO,
-    generate_content_config=_GERACAO,
 )
 
 agente_principal = LlmAgent(
@@ -100,7 +94,6 @@ agente_principal = LlmAgent(
         + _REGRAS_COMUNS
     ),
     sub_agents=[agente_reservas, agente_visitantes, agente_regulamento],
-    generate_content_config=_GERACAO,
 )
 
 
