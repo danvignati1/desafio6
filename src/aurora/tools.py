@@ -7,15 +7,17 @@ mensagem do morador. Falhas voltam como dict, nunca como exceção.
 """
 
 import asyncio
+import json
 import sqlite3
 from typing import Literal
 
 from google.adk.tools import FunctionTool, ToolContext
 
-from aurora import regulamento, repositorio
+from aurora import config, regulamento, repositorio
 
-# Enum de áreas derivado dos dados: o modelo só consegue chamar com um id válido.
-AreaId = Literal[tuple(repositorio.ids_das_areas())]
+# Enum de áreas derivado de dados/areas.json: o modelo só consegue chamar com um id válido.
+# Lê o arquivo, não o banco, para que importar este módulo funcione antes de o banco existir.
+AreaId = Literal[tuple(a["id"] for a in json.loads((config.DIR_DADOS / "areas.json").read_text(encoding="utf-8")))]
 
 _SEM_SESSAO = {"ok": False, "motivo": "sessão sem apartamento definido"}
 _OCUPADO = {"ok": False, "motivo": "sistema ocupado, tente novamente em instantes"}

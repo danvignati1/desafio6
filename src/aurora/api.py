@@ -12,14 +12,14 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 from google.adk.events import Event
-from google.adk.runners import Runner
 from google.adk.sessions import DatabaseSessionService
 from google.genai import types
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import event as sa_event
 
 from aurora import config, db, repositorio
 from aurora.agentes import criar_app
+from aurora.runner import RunnerAurora, dono_da_confirmacao
 
 log = logging.getLogger("aurora.api")
 
@@ -32,8 +32,18 @@ class NovaSessao(BaseModel):
     apartamento: str
 
 
+TAMANHO_MAX_MENSAGEM = 4000
+
+
 class NovaMensagem(BaseModel):
-    texto: str
+    texto: str = Field(max_length=TAMANHO_MAX_MENSAGEM)
+
+    @field_validator("texto")
+    @classmethod
+    def _nao_vazio(cls, valor: str) -> str:
+        if not valor.strip():
+            raise ValueError("a mensagem não pode ser vazia")
+        return valor
 
 
 class RespostaConfirmacao(BaseModel):
@@ -54,7 +64,7 @@ async def ciclo_de_vida(app: FastAPI):
     sessoes = DatabaseSessionService(config.URL_SESSOES, connect_args={"timeout": 30})
     sa_event.listen(sessoes.db_engine.sync_engine, "connect", _pragmas_sqlite)
     app.state.sessoes = sessoes
-    app.state.runner = Runner(app=criar_app(), session_service=sessoes)
+    app.state.runner = RunnerAurora(app=criar_app(), session_service=sessoes)
     app.state.travas = {}
     yield
 
@@ -90,9 +100,15 @@ def confirmacoes_pendentes(eventos: list[Event]) -> list[dict]:
                     "id": chamada.id,
                     "acao": original.get("name", ""),
                     "detalhes": original.get("args", {}),
+                    "agente": e.author,
                 }
             )
     return pendentes
+
+
+def _publicas(pendentes: list[dict]) -> list[dict]:
+    """Formato do contrato: o agente dono da pendência é detalhe interno."""
+    return [{k: v for k, v in p.items() if k != "agente"} for p in pendentes]
 
 
 def _texto_final(eventos: list[Event]) -> str:
@@ -121,7 +137,7 @@ async def _responder(request: Request, session_id: str, eventos: list[Event]) ->
     sessao = await _sessao_ou_404(request, session_id)
     return {
         "resposta": _texto_final(eventos),
-        "confirmacoes_pendentes": confirmacoes_pendentes(sessao.events),
+        "confirmacoes_pendentes": _publicas(confirmacoes_pendentes(sessao.events)),
     }
 
 
@@ -158,7 +174,12 @@ async def responder_confirmacao(session_id: str, corpo: RespostaConfirmacao, req
             id=corpo.id, name=CONFIRMACAO, response={"confirmed": corpo.confirmado}
         )
         mensagem = types.Content(role="user", parts=[types.Part(function_response=resposta)])
-        eventos = await _executar(request, session_id, mensagem)
+        # A resposta precisa chegar ao agente que pediu a confirmação, não ao último que falou.
+        marca = dono_da_confirmacao.set(pendente["agente"])
+        try:
+            eventos = await _executar(request, session_id, mensagem)
+        finally:
+            dono_da_confirmacao.reset(marca)
 
         # Rede de segurança contra a falha silenciosa do ADK: se a retomada não
         # chegou ao agente que pediu a confirmação, a tool não roda e nada avisa.
