@@ -45,6 +45,10 @@ CREATE TABLE IF NOT EXISTS visitantes (
 
 CREATE INDEX IF NOT EXISTS ix_visitantes_apartamento ON visitantes (apartamento);
 
+-- Autorizar o mesmo visitante na mesma data duas vezes não duplica o registro (idempotência).
+CREATE UNIQUE INDEX IF NOT EXISTS uq_visitante
+    ON visitantes (apartamento, nome COLLATE NOCASE, data);
+
 -- Sequência dos códigos de reserva. AUTOINCREMENT nunca reaproveita números.
 CREATE TABLE IF NOT EXISTS sequencia_reserva (
     n INTEGER PRIMARY KEY AUTOINCREMENT
