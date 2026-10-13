@@ -22,6 +22,7 @@ def conferir(descricao: str, condicao: bool) -> None:
 app = criar_app()
 especialistas = agente_principal.sub_agents
 conferir("agente principal com pelo menos 2 especialistas", len(especialistas) >= 2)
+conferir("especialista de regulamento presente", any(a.name == "regulamento" for a in especialistas))
 conferir("retomada ligada no App", bool(app.resumability_config and app.resumability_config.is_resumable))
 conferir("especialistas mantêm a transferência permitida (retomada de confirmação)", all(
     not a.disallow_transfer_to_parent and not a.disallow_transfer_to_peers for a in especialistas

@@ -11,7 +11,7 @@ from google.adk.apps.app import ResumabilityConfig
 from google.genai import types
 
 from aurora import config
-from aurora.tools import FERRAMENTAS_RESERVAS, FERRAMENTAS_VISITANTES
+from aurora.tools import FERRAMENTAS_REGULAMENTO, FERRAMENTAS_RESERVAS, FERRAMENTAS_VISITANTES
 
 _GERACAO = types.GenerateContentConfig(temperature=0.2)
 
@@ -67,6 +67,25 @@ agente_visitantes = LlmAgent(
     generate_content_config=_GERACAO,
 )
 
+agente_regulamento = LlmAgent(
+    name="regulamento",
+    model=config.MODELO,
+    description=(
+        "Responde dúvidas sobre o regulamento interno: piscina, silêncio, animais, mudanças, obras, "
+        "garagem, lixo, penalidades e demais regras do condomínio."
+    ),
+    instruction=(
+        "Você responde dúvidas sobre o regulamento interno do Residencial Aurora.\n"
+        "- Para cada assunto da pergunta, chame consultar_regulamento uma vez, com uma pergunta curta e objetiva.\n"
+        "- Responda somente com base no que a tool devolver, citando o número do artigo. Atenção a "
+        "diferenças por dia ou situação (por exemplo, dias úteis e domingos) e responda a que o morador perguntou.\n"
+        "- Se a tool não encontrar o assunto, diga que o regulamento não trata disso. Não invente regras.\n"
+        + _REGRAS_COMUNS
+    ),
+    tools=FERRAMENTAS_REGULAMENTO,
+    generate_content_config=_GERACAO,
+)
+
 agente_principal = LlmAgent(
     name="aurora",
     model=config.MODELO,
@@ -76,10 +95,11 @@ agente_principal = LlmAgent(
         "Você não executa ações: seu trabalho é entender o pedido e transferir para o especialista certo.\n"
         "- Reservas, agenda e cancelamento de reservas: transfira para o agente 'reservas'.\n"
         "- Autorização e lista de visitantes: transfira para o agente 'visitantes'.\n"
+        "- Dúvidas sobre regras, horários e normas do condomínio: transfira para o agente 'regulamento'.\n"
         "- Cumprimentos e dúvidas sobre o que você faz: responda você mesmo, em uma ou duas frases.\n"
         + _REGRAS_COMUNS
     ),
-    sub_agents=[agente_reservas, agente_visitantes],
+    sub_agents=[agente_reservas, agente_visitantes, agente_regulamento],
     generate_content_config=_GERACAO,
 )
 

@@ -12,7 +12,7 @@ from typing import Literal
 
 from google.adk.tools import FunctionTool, ToolContext
 
-from aurora import repositorio
+from aurora import regulamento, repositorio
 
 # Enum de áreas derivado dos dados: o modelo só consegue chamar com um id válido.
 AreaId = Literal[tuple(repositorio.ids_das_areas())]
@@ -124,3 +124,15 @@ FERRAMENTAS_VISITANTES = [
     listar_meus_visitantes,
     FunctionTool(autorizar_visitante, require_confirmation=True),
 ]
+
+
+async def consultar_regulamento(pergunta: str, tool_context: ToolContext) -> dict:
+    """Consulta o regulamento interno e devolve só os artigos pertinentes à pergunta.
+
+    Faça uma consulta por assunto. Responda apenas com base no que a tool devolver,
+    citando o artigo. Se a tool não encontrar, diga que o regulamento não trata disso.
+    """
+    return await asyncio.to_thread(regulamento.buscar, pergunta)
+
+
+FERRAMENTAS_REGULAMENTO = [consultar_regulamento]

@@ -2,7 +2,7 @@
 
 Assistente de chat para os moradores do Residencial Aurora, construído com Google ADK e exposto por uma API HTTP. O morador reserva o salão de festas, a churrasqueira e a quadra, cancela as próprias reservas, autoriza visitantes e tira dúvidas sobre o regulamento interno.
 
-> Status: em desenvolvimento. Fases 0 a 4 concluídas (spike, banco, tools, agentes e API). As seções **Arquitetura**, **Garantias** e **Como rodar** serão completadas com arquivos e trechos reais conforme a implementação avançar.
+> Status: em desenvolvimento. Fases 0 a 5 concluídas (spike, banco, tools, agentes, API e regulamento). As seções **Arquitetura**, **Garantias** e **Como rodar** serão completadas com arquivos e trechos reais conforme a implementação avançar.
 
 ## Entendimento e escopo
 
@@ -82,7 +82,7 @@ Morador ──> API FastAPI ──> Runner (ADK) ──> Agente principal "auror
 - [x] **2. Tools e regras:** apartamento lido do state da sessão, cancelamento sem vazar dados de terceiros, agenda só com livre ou ocupada, confirmação por taxa decidida em código, disputa resolvida pelo banco (`scripts/verificar_regras.py`).
 - [x] **3. Agentes:** principal `aurora` com especialistas `reservas` e `visitantes`, App com retomada ligada (`scripts/verificar_agentes.py`).
 - [x] **4. API:** rotas do contrato em `src/aurora/api.py`, pendências derivadas dos eventos persistidos, `404` e `409`, rede de segurança contra retomada silenciosa (`scripts/verificar_api.py`).
-- [ ] **5. Regulamento:** especialista com busca por capítulo e retorno mínimo de trecho.
+- [x] **5. Regulamento:** especialista `regulamento` com tool de busca por capítulo (`src/aurora/regulamento.py`), que devolve no máximo 3 artigos de um único capítulo (`scripts/verificar_regulamento.py`).
 - [ ] **6. Script de fluxo** reproduzindo os 15 passos do avaliador, incluindo reinício e disputa concorrente.
 - [ ] **7. README final** com Arquitetura, Garantias (arquivo e trecho) e Como rodar.
 

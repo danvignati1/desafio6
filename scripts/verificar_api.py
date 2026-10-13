@@ -17,7 +17,7 @@ from google.adk.models.base_llm import BaseLlm
 from google.adk.models.llm_response import LlmResponse
 from google.genai import types
 
-from aurora import agentes, restaurar
+from aurora import agentes, config, restaurar
 from aurora.api import app
 
 BASE = "http://127.0.0.1:8765"
@@ -55,11 +55,17 @@ class ModeloFalso(BaseLlm):
             "",
         ).lower()
         visitante = bool(re.search(r"visitante|libera|autoriz|entrada", usuario))
+        regra = bool(re.search(r"piscina|regulamento|funciona", usuario))
         if self.papel == "principal":
-            yield _chamada("transfer_to_agent", agent_name="visitantes" if visitante else "reservas")
+            yield _chamada("transfer_to_agent", agent_name="regulamento" if regra else "visitantes" if visitante else "reservas")
+        elif self.papel == "regulamento":
+            if not regra:
+                yield _chamada("transfer_to_agent", agent_name="visitantes" if visitante else "reservas")
+            else:
+                yield _chamada("consultar_regulamento", pergunta=usuario)
         elif self.papel == "reservas":
-            if visitante:
-                yield _chamada("transfer_to_agent", agent_name="visitantes")
+            if visitante or regra:
+                yield _chamada("transfer_to_agent", agent_name="regulamento" if regra else "visitantes")
                 return
             area = ("quadra" if "quadra" in usuario else
                     "churrasqueira" if "churrasqueira" in usuario else "salao-de-festas")
@@ -71,8 +77,8 @@ class ModeloFalso(BaseLlm):
             else:
                 yield _chamada("listar_minhas_reservas")
         else:
-            if not visitante:
-                yield _chamada("transfer_to_agent", agent_name="reservas")
+            if regra or not visitante:
+                yield _chamada("transfer_to_agent", agent_name="regulamento" if regra else "reservas")
                 return
             nome = re.search(r"\bda ([a-zà-ú]+ [a-zà-ú]+)", usuario)
             data = re.search(r"\d{4}-\d{2}-\d{2}", usuario)
@@ -84,7 +90,8 @@ class ModeloFalso(BaseLlm):
 
 for agente, papel in ((agentes.agente_principal, "principal"),
                       (agentes.agente_reservas, "reservas"),
-                      (agentes.agente_visitantes, "visitantes")):
+                      (agentes.agente_visitantes, "visitantes"),
+                      (agentes.agente_regulamento, "regulamento")):
     agente.model = ModeloFalso(model="falso", papel=papel)
 
 
@@ -172,8 +179,16 @@ async def main() -> None:
             await conf(s1, p[0]["id"], True)
             conferir("passo 11: aprovado, visitante gravado", await visitantes("101") == [{"nome": "Joana Ribeiro", "data": "2030-04-21"}])
 
-            n_eventos = len(json.loads(await eventos(s1)))
-            conferir("passo 12: eventos incluem chamadas de tool", "function_call" in await eventos(s1))
+            r = await msg(s1, "Até que horas a piscina funciona aos domingos?")
+            todos = await eventos(s1)
+            texto_reg = (config.DIR_DADOS / "regulamento.md").read_text(encoding="utf-8")
+            outros = [par for cap in re.split(r"^## ", texto_reg, flags=re.M)[1:] if not cap.startswith("Capítulo IV")
+                      for par in cap.split("\n\n") if len(par) > 60]
+            conferir("passo 12: resposta traz o fechamento de domingo (20h)", "20h" in r["resposta"])
+            conferir("passo 12: eventos têm tool calls e só o capítulo da piscina",
+                     "consultar_regulamento" in todos and "function_call" in todos
+                     and not any(par.strip() in todos for par in outros))
+            n_eventos = len(json.loads(todos))
 
     # Passo 13: reinício sem restaurar
     async with Servidor():
