@@ -220,7 +220,14 @@ class ServidorGerenciado:
 
     def subir(self) -> None:
         self.log.parent.mkdir(exist_ok=True)
-        self.proc = subprocess.Popen(["uv", "run", "aurora-api"], cwd=RAIZ,
+        try:
+            httpx.get(f"{BASE}/apartamentos/101/reservas", timeout=2)
+        except httpx.HTTPError:
+            pass
+        else:
+            raise RuntimeError(f"já existe algo respondendo em {BASE}; pare-o antes de rodar o teste")
+        # Sem o wrapper `uv run`: o processo filho é o próprio servidor, então SIGINT e SIGKILL o atingem.
+        self.proc = subprocess.Popen([sys.executable, "-m", "aurora.api"], cwd=RAIZ,
                                      stdout=self.log.open("ab"), stderr=subprocess.STDOUT)
         for _ in range(120):
             try:

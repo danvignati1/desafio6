@@ -143,16 +143,32 @@ curl -s localhost:8000/apartamentos/101/reservas
 
 ### Verificações
 
-Os scripts ficam em `scripts/`. Os três primeiros não chamam o Gemini.
+Os scripts ficam em `scripts/`. Os quatro primeiros e o `--grupo A` dos adversariais não chamam o Gemini. Todos restauram os dados antes de rodar; não os execute com a API em uso.
 
 ```bash
 uv run python scripts/verificar_regras.py       # regras das tools e disputa de 24 reservas simultâneas
 uv run python scripts/verificar_regulamento.py  # busca por capítulo e isolamento entre capítulos
 uv run python scripts/verificar_api.py          # fluxo do avaliador com modelo falso, por HTTP real
+uv run python scripts/verificar_confirmacao_multiagente.py  # confirmações de agentes diferentes (reproduz o bug do Runner padrão)
 uv run python scripts/fluxo_avaliador.py        # fluxo do avaliador com o Gemini real (consome créditos)
+uv run python scripts/teste_usuario.py          # conversa como morador, com o Gemini real
+uv run python scripts/testes_adversarios.py     # 22 casos adversariais; --grupo A roda só os que não chamam o Gemini
 ```
 
 `fluxo_avaliador.py` reproduz os 15 passos: sobe a API, reinicia com Ctrl+C sem restaurar, dispara as duas aprovações concorrentes e confere o repositório. Use `--externo` para subir e reiniciar a API você mesmo.
+
+## Testes e evidências
+
+Todos os testes realizados estão registrados em [docs/TESTES.md](docs/TESTES.md), com o resultado de cada suíte e as falhas que eles encontraram:
+
+| Suíte | Resultado | Evidência |
+|---|---|---|
+| Regras, agentes, regulamento e fluxo com modelo falso (sem Gemini) | 22 + 14 + 22 + 46 verificações | `scripts/verificar_*.py` |
+| Fluxo do avaliador, passos 1 a 15, com o Gemini real | 46/46 | [docs/evidencias/fluxo_avaliador.md](docs/evidencias/fluxo_avaliador.md) |
+| Teste como morador, em linguagem natural | sem violação de regra | [docs/evidencias/teste_usuario.md](docs/evidencias/teste_usuario.md) |
+| Testes adversariais (22 casos: injeção de prompt, confirmação forjada, disputa de 12 sessões, `kill -9`, entradas hostis) | 22/22 | [docs/evidencias/testes_adversarios.md](docs/evidencias/testes_adversarios.md) |
+
+Os testes adversariais acharam um bug real, corrigido em [runner.py](src/aurora/runner.py): confirmação pendente de um agente aprovada depois que a conversa seguiu para outro. A rodada anterior à correção (21/22) está preservada em [docs/evidencias/testes_adversarios_rodada_1_com_falha.md](docs/evidencias/testes_adversarios_rodada_1_com_falha.md).
 
 ## Decisões e limites
 
