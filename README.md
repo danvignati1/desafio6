@@ -2,7 +2,7 @@
 
 Assistente de chat para os moradores do Residencial Aurora, construído com Google ADK e exposto por uma API HTTP. O morador reserva o salão de festas, a churrasqueira e a quadra, cancela as próprias reservas, autoriza visitantes e tira dúvidas sobre o regulamento interno.
 
-> Status: em desenvolvimento. As seções **Arquitetura**, **Garantias** e **Como rodar** descrevem o desenho planejado e serão completadas com arquivos e trechos reais conforme a implementação avançar.
+> Status: em desenvolvimento. Fases 0 a 3 concluídas (spike, banco, tools e agentes). As seções **Arquitetura**, **Garantias** e **Como rodar** serão completadas com arquivos e trechos reais conforme a implementação avançar.
 
 ## Entendimento e escopo
 
@@ -77,14 +77,14 @@ Morador ──> API FastAPI ──> Runner (ADK) ──> Agente principal "auror
 
 ## Plano de desenvolvimento
 
-0. Spike da confirmação: agente com `require_confirmation`, sessão em SQLite, retomada via API e reinício, depois com agente principal e subagent. Define a topologia final.
-1. Base: projeto uv, ADK fixado, `.env.example`, schema SQLite e carga inicial.
-2. Tools e regras: apartamento pelo state, índice único parcial em área e data, códigos nunca reutilizados, respostas sem dados de terceiros.
-3. Agentes: principal e especialistas, instruções curtas.
-4. API: rotas do contrato, pendências derivadas dos eventos persistidos, `404` e `409`.
-5. Regulamento: busca por capítulo, retorno mínimo de trecho.
-6. Script de fluxo reproduzindo os 15 passos do avaliador, incluindo reinício e disputa concorrente.
-7. README final com Arquitetura, Garantias (arquivo e trecho) e Como rodar.
+- [x] **0. Spike da confirmação:** retomada de `require_confirmation` com sessão em SQLite e reinício validada, com LLM falso e com Gemini. Topologia com `disallow_transfer_to_*` falha em silêncio e foi descartada.
+- [x] **1. Base:** projeto uv com ADK fixado em 2.2.0, `src/aurora`, schema SQLite com índice único parcial em `reservas(area, data)`, códigos por sequência, carga dos JSON e `uv run aurora-restaurar`.
+- [x] **2. Tools e regras:** apartamento lido do state da sessão, cancelamento sem vazar dados de terceiros, agenda só com livre ou ocupada, confirmação por taxa decidida em código, disputa resolvida pelo banco (`scripts/verificar_regras.py`).
+- [x] **3. Agentes:** principal `aurora` com especialistas `reservas` e `visitantes`, App com retomada ligada (`scripts/verificar_agentes.py`).
+- [ ] **4. API:** rotas do contrato, pendências derivadas dos eventos persistidos, `404` e `409`.
+- [ ] **5. Regulamento:** especialista com busca por capítulo e retorno mínimo de trecho.
+- [ ] **6. Script de fluxo** reproduzindo os 15 passos do avaliador, incluindo reinício e disputa concorrente.
+- [ ] **7. README final** com Arquitetura, Garantias (arquivo e trecho) e Como rodar.
 
 ## Garantias
 
